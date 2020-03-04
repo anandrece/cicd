@@ -1,0 +1,248 @@
+
+Jenkins:
+wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins.io/redhat-stable/jenkins.repo
+rpm --import http://pkg.jenkins.io/redhat-stable/jenkins.io.key
+yum install jenkins java-1.8.0-openjdk –y
+sed -i.bak 's/8080/9090/g' /etc/sysconfig/jenkins
+
+Gitlab:
+curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.rpm.sh | sudo bash
+EXTERNAL_URL="http://ladmin.hal.hitachi.com" yum install -y gitlab-ce
+gitlab-ctl reconfigure
+
+Change setting -->  /etc/gitlab/gitlab.rb external port, external url
+
+
+Docker:
+yum install docker 
+
+
+
+Jenkins Configuration:
+1) Node configuration
+2) Global tools configuration
+3) Plugin configuration
+4) Job configuration
+	- Where to run
+	- When to run
+	- What it has to do
+
+git log --oneline -1
+git clone https://github.com/anandrece/jenkins.git DEV_REPO
+git  add .
+git  commit -m “modified the file”
+git status
+git push
+
+Added Label → Remote root directory → commented requiretty in sudoers
+echo "New commit found" 
+sudo cp * /var/www/html/
+
+Downstream dependency
+
+
+Jfrog Artifactory: 
+ docker run  -d -v /artifactory:/var/opt/jfrog/artifactory -P docker.bintray.io/jfrog/artifactory-oss
+
+docker run -d -p 5000:5000  --restart=always --name registry -v /data/registry:/var/lib/registry registry
+
+ docker run -itd -u root --restart=always --name jenkins -p 32999:8080 -v /data/jenkins_home:/var/jenkins_home -v /var/run/docker.sock:/var/run/docker.sock jenkins/jenkins:lts
+
+docker run -itd --restart=always --name gitlab -p 33999:80 -p 33998:22 -p 33997:443 -v /data/gitlab:/etc/gitlab -v /data/gitlab:/var/opt/gitlab -v /data/gitlab/logs:/var/log/gitlab gitlab/gitlab-ce
+
+
+
+
+docker update --restart=always docker_id  (no,on-failures, unless-stopped,always)
+git clone ssh://git@ladmin.hal.hitachi.com:33998/root/jenkins.git
+
+Plugins:
+Job configuration history plugin
+Build Failure analyzer
+Restart plugin http://host:port/jenkins/restart
+
+
+cat  Dockerfile
+FROM nginx:alpine
+COPY . /usr/share/nginx/html/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Example CI/CD Job:
+git pull ssh://git@ladmin.hal.hitachi.com:33998/root/jenkins.git  (First time do with clone)
+sudo docker build -t ladmin.hal.hitachi.com:5000/webnginx -f /home/anandr/jenkins/workspace/build_image/Dockerfile /home/anandr/jenkins/workspace/build_image/
+sudo docker push ladmin.hal.hitachi.com:5000/webnginx:latest
+
+sudo docker pull ladmin.hal.hitachi.com:5000/webnginx:latest
+sudo docker stop webserver || true
+sudo docker run --rm --name webserver -itd -p 80:80 ladmin.hal.hitachi.com:5000/webnginx:latest
+
+Gitlab→ Project→ Settings→ Integrations 
+http://ladmin.hal.hitachi.com:32999/buildByToken/build?job=build_image&token=anand
+http://ladmin.hal.hitachi.com:32999/project/build_image 
+
+Add insecure registry:
+ cat /etc/docker/daemon.json
+{ "insecure-registries":["ladmin.hal.hitachi.com:5000"] }
+Systemctl restart docker 
+
+Added anandr ladmin key only in gitlab
+
+Plugins: 
+Safe Restart Plugin
+Pipeline
+Job Configuration History
+Build Failure Analyzer	
+Build Authorization Token Root Plugin
+Generic Webhook Trigger Plugin
+GitLab
+Gitlab Hook Plugin
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+sudo dnf -y install python3-pip
+sudo pip3 install ansible --user
+
+sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo dnf install docker-ce --nobest
+sudo systemctl status  docker
+sudo usermod -aG docker $USER
+
+
+
+
+
+
+
+
+
+
+
+From Youtube: (Installation of Jenkins)
+Apt update
+Apt install openjdk-8-jdk
+Add jenkins key and repo
+Install jenkins (apt  update && apt install jenkins)
+Systemctl --now enable jenkins 
+Install docker → curl -fsSL get.docker.com | /bin/bash
+Add Jenkins user to docker group → usermod -aG docker jenkins
+Restart jenkins → systemctl restart jenkins
+
+Setup Kubernetes cluster (on both nodes)
+apt-get update -y && apt install apt-transport-https
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add (adding kubernetes signing key)
+apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
+
+apt update -y 
+swapoff -a (disable permanently in fstab)
+modprobe br_netfilter && sysctl -p && sysctl net.bridge.bridge-nf-call-iptables=1
+
+apt install docker.io -y && systemctl --now enable docker
+apt install -y kubelet kubeadm kubectl kubernetes-cni
+systemctl daemon-reload && systemctl --now enable kubelet
+
+On master node
+kubeadm init --pod-network-cidr=10.244.0.0/16
+kubectl  get nodes
+kubeadm token crean --print-join-command
+Kubectl get pods --all-namespaces
+kubectl apply -f weave network
+
+On worker node
+kubeadm join 192.168.100.6:6443 --token 06tl4c.oqn35jzecidg0r0m --discovery-token-ca-cert-hash sha256:
+
+
+
+
+
+minikube start --vm-driver=none
+minikube status
+minikube stop 
+minikube delete
+
+
+
+
+node {
+    
+    stage("Git clone"){
+      git 'ssh://git@ladmin.hal.hitachi.com:33998/root/cicd.git'
+    }
+
+    /*Global configuration tool --> Add maven*/
+    stage("Maven clean build"){
+      def mavenHome = tool name: "Maven", type: "maven"  
+      def mavenCMD = "${mavenHome}/bin/mvn"
+      
+      sh "${mavenCMD} clean package"
+      /* dnf install java-1.8.0-openjdk-devel*/
+    }
+    
+    stage("Build docker image"){      
+      sh "docker build -t ladmin.hal.hitachi.com:5000/spring-boot-mongo ."
+    }
+    
+    stage("Push docker image"){
+      /* withCredentials: Bind credentials to variables*/
+      sh "docker push ladmin.hal.hitachi.com:5000/spring-boot-mongo"
+    }
+    
+    /* Install plugin 'Kubernetes continous deploy' and add kubernetes credentials from credential page*/
+    /**
+    stage("Deploy to Kubernetes cluster"){
+      kubernetesDeploy(
+          configs: springBootMongo.yml,
+          kubeconfigid: 'KUBERNETES_CONFIG',
+          enableConfigSubstitution: true)
+    }**/
+    /*Install kubectl command in Jenkins slave server and use minikube */
+    stage("Deploy to Kubernetes cluster"){
+        sh "kubectl delete -f springBootMongo.yml"
+        sh "kubectl apply -f springBootMongo.yml"
+    }
+}
+

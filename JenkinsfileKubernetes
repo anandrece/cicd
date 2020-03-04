@@ -1,0 +1,38 @@
+node {
+    
+    stage("Git clone"){
+      git 'ssh://git@ladmin.hal.hitachi.com:33998/root/cicd.git'
+    }
+
+    /*Global configuration tool --> Add maven*/
+    stage("Maven clean build"){
+      def mavenHome = tool name: "Maven", type: "maven"  
+      def mavenCMD = "${mavenHome}/bin/mvn"
+      
+      sh "${mavenCMD} clean package"
+      /* dnf install java-1.8.0-openjdk-devel*/
+    }
+    
+    stage("Build docker image"){      
+      sh "docker build -t ladmin.hal.hitachi.com:5000/spring-boot-mongo ."
+    }
+    
+    stage("Push docker image"){
+      /* withCredentials: Bind credentials to variables*/
+      sh "docker push ladmin.hal.hitachi.com:5000/spring-boot-mongo"
+    }
+    
+    /* Install plugin 'Kubernetes continous deploy' and add kubernetes credentials from credential page*/
+    /**
+    stage("Deploy to Kubernetes cluster"){
+      kubernetesDeploy(
+          configs: springBootMongo.yml,
+          kubeconfigid: 'KUBERNETES_CONFIG',
+          enableConfigSubstitution: true)
+    }**/
+    /*Install kubectl command in Jenkins slave server and use minikube */
+    stage("Deploy to Kubernetes cluster"){
+        sh "kubectl delete -f springBootMongo.yml"
+        sh "kubectl apply -f springBootMongo.yml"
+    }
+}
