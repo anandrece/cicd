@@ -32,7 +32,9 @@ node {
     }**/
     /*Install kubectl command in Jenkins slave server and use minikube */
     stage("Deploy to Kubernetes cluster"){
-        sh "kubectl delete -f springBootMongo.yml"
+        /*sh "kubectl delete -f springBootMongo.yml"*/
         sh "kubectl apply -f springBootMongo.yml"
+        sh "kubectl set image deployment/my-deployment mycontainer=myimage:latest"
+        sh "kubectl set image deployment/my-deployment mycontainer=myimage"
     }
 }
