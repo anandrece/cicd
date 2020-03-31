@@ -36,5 +36,9 @@ node {
         sh "kubectl apply -f springBootMongo.yml"
         sh "kubectl set image deployment/my-deployment mycontainer=myimage:latest"
         sh "kubectl set image deployment/my-deployment mycontainer=myimage"
+        sh "kubectl apply -f springBootMongo.yml"
+        /**sh "kubectl set image deployment/spring-controller springboot=ladmin.hal.hitachi.com:5000/spring-boot-mongo:latest"
+        sh "kubectl set image deployment/spring-controller springboot=ladmin.hal.hitachi.com:5000/spring-boot-mongo"**/
+ 
     }
 }
